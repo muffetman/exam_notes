@@ -1,6 +1,11 @@
 - When resetting the root password on a system running SELinux: If you’re not using SELinux, you could reboot at this point and everything would be fine, however by default CentOS/RHEL 7 use SELinux in enforcing mode, so we need to fix the context of the /etc/shadow file. This is because when the ‘passwd’ command is run, it creates a new /etc/shadow file. As SELinux is not running in this mode the file is created with no SELinux contexts, which can cause problems when we reboot. Create the /.autorelabel command using ‘touch’.
 
-- Installed httpd/Apache on VM01, but unable to reach it on port 80. Ping and SSH works fine. Checked httpd config and fixed some issues but still did not work. Ran tcpdump on VM01 and found packets were reaching the server but was responding back with "unreachable - admin prohibited filter". Clearly a firewall issue and first removed two libvirtd rejection rules on the libvirt host. Did not resolve issue so checked SELinux on VM01 and found it was enabled. Set to permissive, did not resolve. Set to disabled, still did not resolve. Checked /var/logs and stumbled upon firewalld log, and whilst it was empty it led me to checking if the firewalld service was enabled which it was. After stopping and disabling the service connectivity worked.
+- Installed httpd/Apache on VM01, but unable to reach it on port 80. Ping and SSH works fine.
+Checked httpd config and fixed some issues but still did not work. Ran tcpdump on VM01 and found packets were reaching the server but was responding back with "unreachable - admin prohibited filter".
+Clearly a firewall issue and first removed two libvirtd rejection rules on the libvirt host. Did not resolve issue so checked SELinux on VM01 and found it was enabled. 
+Set to permissive, did not resolve. Set to disabled, still did not resolve.
+Checked /var/logs and stumbled upon firewalld log, and whilst it was empty it led me to checking if the firewalld service was enabled which it was.
+After stopping and disabling the service connectivity worked.
 
 - Configured httpd ACL with the following:
     <Directory "/web/html">
