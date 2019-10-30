@@ -1,0 +1,101 @@
+- When resetting the root password on a system running SELinux: If you’re not using SELinux, you could reboot at this point and everything would be fine, however by default CentOS/RHEL 7 use SELinux in enforcing mode, so we need to fix the context of the /etc/shadow file. This is because when the ‘passwd’ command is run, it creates a new /etc/shadow file. As SELinux is not running in this mode the file is created with no SELinux contexts, which can cause problems when we reboot. Create the /.autorelabel command using ‘touch’.
+
+- Installed httpd/Apache on VM01, but unable to reach it on port 80. Ping and SSH works fine. Checked httpd config and fixed some issues but still did not work. Ran tcpdump on VM01 and found packets were reaching the server but was responding back with "unreachable - admin prohibited filter". Clearly a firewall issue and first removed two libvirtd rejection rules on the libvirt host. Did not resolve issue so checked SELinux on VM01 and found it was enabled. Set to permissive, did not resolve. Set to disabled, still did not resolve. Checked /var/logs and stumbled upon firewalld log, and whilst it was empty it led me to checking if the firewalld service was enabled which it was. After stopping and disabling the service connectivity worked.
+
+- Configured httpd ACL with the following:
+    <Directory "/web/html">
+        #AllowOverride None
+        # Allow open access:
+        order deny,allow
+        deny from all
+        allow from host 192.168.25.1
+    </Directory>
+
+- Changed password expiration with: for i in {Bob,Tim,Ben}; do usermod -e 2020-10-22 $i; done 
+- Checked expiration dates with: chage -l username
+- Installed NFS client and daemon on both client and server with: yum install nfs-utils
+- Configured /etc/export with: /nfs    192.168.25.0/24(rw,sync,no_root_squash)
+- Connected from client with: mount -t nfs 192.168.25.16:/nfs /mnt/floki/
+- Setting the limits was done by:
+    @engineers      soft    nproc           8
+    @engineers      hard    nproc           10
+    eric            -       nproc           unlimited
+- Identified which files chronyd was writing to and wrote to file with: lsof -p 17878 +fg | grep RW | tail -n 1 > ~/service_files.txt
+- Grep for two different words in the same line in a file: grep -E 'session opened.*eric' secure
+- Grep for two different words in any order, in the same line in a file: grep -E 'trap.*dont|dont.*trap' grep_test
+- Grep for line starting with a certain word: grep -iE '^dont' grep_test
+- Find and copy files to certain directory: find . -name 'service*' -type f -exec cp {} \/tmp \;
+- Find files that are greater than 1MB in size: find /etc/ -type f -size +1M
+- Print shared library dependencies: ldd /usr/bin/bash
+- CPU activity with sar: sar
+- Memory activity with sar: sar -r
+- CPU and IO stats: iostat
+- More processor stats: mpstat
+- Virtual memory stats
+- Stats on particular process: pidstat -p 11733
+- Show process memory map: pmap -p 11733
+- Show current working directory for process: pwdx 11733
+- Show process tree (-a include cmd line args): pstree -a
+- Show login stats: last
+- Show last bad logins: lastb
+- Show boot log: journalctl -b
+- Show journalctl errors: journalctl -p err
+- List SELinux file contexts: ls -Z
+- List SELinux process contexts: ps -eZ
+
+RPM:
+- Find which RPM files come from: rpm -qf /usr/bin/bash
+- List files in a package: rpm -ql bash
+- List config files: rpm -qc bash
+- List man documents: rpm -qd bash
+
+YUM:
+- Show installed packages: yum list installed
+- Show what is provided: yum provides python2
+- Show the dependency list: yum deplist python2
+
+SYSTEMD:
+- List targets: systemctl list-units --type=target --all
+- Get default target: systemctl get-default
+- Change default target: systemctl set-default
+
+BOOT LOADER:
+- Make changes in /etc/default/grub
+- Commit changes to grub2-mkconfig
+- Config is stored in /boot/grub2/grub.cfg
+
+CRON / Scheduling jobs:
+cat /etc/crontab
+
+# Example of job definition:
+# .---------------- minute (0 - 59)
+# |  .------------- hour (0 - 23)
+# |  |  .---------- day of month (1 - 31)
+# |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
+# |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+# |  |  |  |  |
+# *  *  *  *  * user-name  command to be executed
+
+OR
+cat /etc/anacrontab
+
+- Use 'at' to schedule one-off job: at
+at> echo "Hello there"
+at> Ctrl-D
+
+
+IPTABLES:
+- Add a new rule rejecting port 80 for single host: iptables -I INPUT 1 -p tcp --dport 80 -s 192.168.25.20 -j REJECT
+- Delete a rule based on line number: iptables -D  INPUT 1
+
+FIREWALLD:
+- Add access to port: firewall-cmd --permanent --add-port=80/tcp
+- Remove access to port: firewall-cmd --permanent --remove-port=80/tcp
+- Get zones: firewall-cmd --get-zones
+- List all rules: firewall-cmd --list-all
+- Add rule to allow single IP to port 80:
+    firewall-cmd --permanent --zone=public --add-rich-rule='
+    rule family="ipv4"
+    source address="192.168.25.20/32"
+    port protocol="tcp" port="80" accept'
+- To enable logging add '--debug'to /etc/sysconfig/firewalld
