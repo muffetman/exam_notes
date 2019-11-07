@@ -47,6 +47,7 @@ After stopping and disabling the service connectivity worked.
 - Show journalctl errors: journalctl -p err
 - List SELinux file contexts: ls -Z
 - List SELinux process contexts: ps -eZ
+- List interface stats: ifstat
 
 RPM:
 - Find which RPM files come from: rpm -qf /usr/bin/bash
