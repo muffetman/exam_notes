@@ -1,3 +1,5 @@
+- To reset a forgotten/lost root password, reboot into grub options, boot into runlevel 1 and use passwd commmand.
+
 - When resetting the root password on a system running SELinux: If you’re not using SELinux, you could reboot at this point and everything would be fine, however by default CentOS/RHEL 7 use SELinux in enforcing mode, so we need to fix the context of the /etc/shadow file. This is because when the ‘passwd’ command is run, it creates a new /etc/shadow file. As SELinux is not running in this mode the file is created with no SELinux contexts, which can cause problems when we reboot. Create the /.autorelabel command using ‘touch’.
 
 - Installed httpd/Apache on VM01, but unable to reach it on port 80. Ping and SSH works fine.
@@ -9,12 +11,14 @@ After stopping and disabling the service connectivity worked.
 
 - Configured httpd ACL with the following:
     <Directory "/web/html">
-        #AllowOverride None
-        # Allow open access:
+        Require all granted
         order deny,allow
         deny from all
         allow from host 192.168.25.1
     </Directory>
+
+- After applying the above httpd settings the web server still responded with 403 forbidden. Using the
+same configuration for /var/www/html worked fine. Checking /var/log/httpd/error_log revealed: access to /index.html denied (filesystem path '/web/html/index.html') because search permissions are missing on a component of the path. It turns out this is due do SELinux contexts not being set. Performing the following command to set the correct context resolved the issues: chcon -R -t httpd_sys_content_t /web/. The correct context was found by running: ls -Z /var/www
 
 - Changed password expiration with: for i in {Bob,Tim,Ben}; do usermod -e 2020-10-22 $i; done 
 - Checked expiration dates with: chage -l username
@@ -36,7 +40,7 @@ After stopping and disabling the service connectivity worked.
 - Memory activity with sar: sar -r
 - CPU and IO stats: iostat
 - More processor stats: mpstat
-- Virtual memory stats
+- Virtual memory stats: vmstat
 - Stats on particular process: pidstat -p 11733
 - Show process memory map: pmap -p 11733
 - Show current working directory for process: pwdx 11733
@@ -105,3 +109,51 @@ FIREWALLD:
     source address="192.168.25.20/32"
     port protocol="tcp" port="80" accept'
 - To enable logging add '--debug'to /etc/sysconfig/firewalld
+- Reload is required after each change: firewall-cmd --reload
+
+USER ENV:
+- Default useradd settings are stored in /etc/default/useradd
+- Skeleton home director stored at /etc/skel
+
+PAM:
+- Deny user(s) based on pam.d configuration:
+    - Edit /etc/pam.d/sshd
+    - Add: auth       required     pam_listfile.so onerr=succeed item=user sense=deny file=/etc/ssh/deniedusers
+    - Create file /etc/ssh/deniedusers and username line by line
+
+CHRONY:
+- Force chrony update: chronyc makestep
+
+NetworkManager:
+- Change DNS: nmcli con mod ens3 ipv4.dns "192.168.25.19"
+
+DNS SERVER:
+- Install bind: yum install bind bind-utils
+- Check configuration: named-checkconf /etc/named.conf
+- Basic config:
+    listen-on port 53 { 127.0.0.1; 192.168.25.0/24;};
+    allow-query     { localhost; 192.168.25.0/24;};
+    allow-query-cache     { localhost; 192.168.25.0/24;};
+
+POSTFIX:
+- Set source domain: postconf -e myorigin='floki.home.lab'
+- Configure interfaces: postconf -e inet_interfaces="192.168.25.20, localhost"
+- Configure destinations: postconf -e mydestination="$myhostname, localhost.$mydomain, localhost"
+- Configure allowed nets: postconf -e mynetworks="127.0.0.1/32 192.168.25.20/24 [::1]/128"
+- Email aliases are configured in /etc/aliases
+- The aliases DB must be refreshed after modifying the file: postalias /etc/aliases
+- Check the configuration is OK: postfix check
+- Send test mail: echo "Test mail 2" | sendmail -s "Test mail 2" postmaster@floki.home.lab
+- Mail stored in /var/spool/mail
+
+SQUID PROXY:
+- To modify ACL, edit /etc/squid/squid.conf and add, for example, the following:
+    acl localnet src 10.0.0.0/8
+    acl Safe_ports port 80
+
+DOVECOTE IMAP:
+- Edit /etc/dovecot/dovecot.conf and set the protocols: protocols = imap pop3
+- Edit /etc/dovecot/conf.d/10-mail.conf and set the mailbox and namespace:
+    mail_location = mbox:~/mail:INBOX=/var/mail/%u
+    mail_privileged_group = mail
+- ssl_cert and ssl_key lines should be filled and uncommented in /etc/dovecot/conf.d/10-ssl.conf
