@@ -157,3 +157,41 @@ DOVECOTE IMAP:
     mail_location = mbox:~/mail:INBOX=/var/mail/%u
     mail_privileged_group = mail
 - ssl_cert and ssl_key lines should be filled and uncommented in /etc/dovecot/conf.d/10-ssl.conf
+
+MARIADB:
+- Install with yum install mariadb mariadb-server
+- Perform initial configuration with: mysql_secure_installation
+- Main database server config stored in: /etc/my.cnf.d/mariadb-server.cnf
+- Default port is 3306
+- If changing the port, SELinux needs to be updated, for example: semanage port -a -t mysqld_port_t -p tcp 29391
+- Login to database server using mysql -u root -p
+- List allowed users: SELECT User, Host FROM mysql.user WHERE Host <> 'localhost';
+- Grant access from remote client: grant all privileges on *.* to 'root'@'192.168.25.12' identified by 'ragnar' with grant option;
+- Create database: CREATE DATABASE testdb;
+
+DOCKER:
+- Install dependencies: yum install -y yum-utils device-mapper-persistent-data lvm2
+- Add repo: yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+- Install containerd.io dependency: yum install containerd
+- Install docker: yum install docker-ce --nobest
+- Docker dir: /var/lib/docker
+- Print info on docker server: docker info
+- Search for containers: docker search ubuntu
+- Run a container: docker run ubuntu
+- Start an interactive tty session: docker run -it ubuntu
+- List containers: docker ps -a
+- Shutdown container: docker kill ubuntu
+- Delete container: docker rm ubuntu
+
+KVM:
+- Install packages: yum install qemu-kvm virt-install libvirt libguestfs-tools
+- Query which OS' can be run on the KVM host: osinfo-query os
+- List of example virt-install commands in the manpage: man virt-install
+- List snapshots: virsh snapshot-list <domain>
+- Take snapshot of VM: virsh snapshot-create-as --domain <domain> --name <name> --description <desc>
+- View info on snapshot: virsh snapshot-info --domain <domain> --current
+
+STORAGE:
+- Create physical volume: pvcreate /dev/sdd
+- Create volume group: vgcreate my_vg /dev/sdd
+- Create logical volume: lvcreate -L 100M my_vg
