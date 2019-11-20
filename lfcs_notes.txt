@@ -195,3 +195,31 @@ STORAGE:
 - Create physical volume: pvcreate /dev/sdd
 - Create volume group: vgcreate my_vg /dev/sdd
 - Create logical volume: lvcreate -L 100M my_vg
+- Create an LVM2 RAID 1 array:
+    - vgcreate raidVG /dev/sdb /dev/sdc
+    - lvcreate --type raid1 -m1 -L 1G -n raidLV1 raidVG
+- List all block devices, mounted and unmounted: blkid -o list
+- Default mount options can be changed in /etc/mke2fs.conf under default_mntopts
+- To enable ACL on a FS, add the option 'acl' to the mount point in /etc/fstab
+- Remount using: mount -o remount /dev/mapper/acl_vg-lvol0
+- Two types of ACL's: access ACLs are (which are applied to a file or directory), and default (optional) ACLs, which can only be applied to a directory.
+- Retrieve ACL information: getfacl /var/lib/testfile
+- Modify ACL to give RW to user 'alf': setfacl -m u:alf:rw /var/lib/testfile 
+- Set default ACL on directory: setfacl -m d:o:r /var/lib
+- To remove a specific ACL, use the -x flag instead of -m
+- To remove all ACL in a directory, use -b: setfacl -b /var/lib
+- To enable quota on a FS, edit /etc/fstab and add options: grpjquota=aquota.group,usrjquota=aquota.user,jqfmt=vfsv1
+- For the following error: "You just mounted an file system that supports labels which does not
+contain labels, onto an SELinux box."
+    - Fix with: restorecon -R /acl_test
+- Create the quota index: quotacheck -cgum /acl_test
+- To enable quotas: quotaon -v /acl_test
+- To disable quotas: quotaoff -v /acl_test
+- Modify quota for user: edquota -u alf
+- Modify quota for group: edquota -g devs
+- Modify quota grace period: edquota -t
+- View quota report: repquota -a
+- View quota stats: quotastats
+- Refresh NFS exports: exportfs -ra
+- Modify /etc/auto.master with: /mnt    /etc/auto.share
+- Create /etc/auto.share with: testdir1         192.168.25.10:/nfs/dir1
