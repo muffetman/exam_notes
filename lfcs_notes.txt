@@ -33,8 +33,12 @@ same configuration for /var/www/html worked fine. Checking /var/log/httpd/error_
 - Grep for two different words in the same line in a file: grep -E 'session opened.*eric' secure
 - Grep for two different words in any order, in the same line in a file: grep -E 'trap.*dont|dont.*trap' grep_test
 - Grep for line starting with a certain word: grep -iE '^dont' grep_test
+- Grep for pattern and only print the names of files pattern: grep -lsi 'ssh' *
 - Find and copy files to certain directory: find . -name 'service*' -type f -exec cp {} \/tmp \;
 - Find files that are greater than 1MB in size: find /etc/ -type f -size +1M
+- Find files with setuid bit set: find /usr -perm /4000
+- Find files with sgid bit set: find /usr -perm /2000
+- Compress using append option: tar rvf compressed_stuff.tar /root/files/*
 - Print shared library dependencies: ldd /usr/bin/bash
 - CPU activity with sar: sar
 - Memory activity with sar: sar -r
@@ -180,8 +184,11 @@ DOCKER:
 - Run a container: docker run ubuntu
 - Start an interactive tty session: docker run -it ubuntu
 - List containers: docker ps -a
+- Start and attach to container: docker start -a <id>
+- Attach to container: docker attach <id>
 - Shutdown container: docker kill ubuntu
 - Delete container: docker rm ubuntu
+- Autostart container: docker run --restart <always/unless-stopped>
 
 KVM:
 - Install packages: yum install qemu-kvm virt-install libvirt libguestfs-tools
@@ -198,6 +205,8 @@ STORAGE:
 - Create an LVM2 RAID 1 array:
     - vgcreate raidVG /dev/sdb /dev/sdc
     - lvcreate --type raid1 -m1 -L 1G -n raidLV1 raidVG
+- Create FS: mkfs.xfs /dev/mapper/raidVG-raidLV1
+- Mount: mount /dev/mapper/raidVG-raidLV1 /mnt
 - List all block devices, mounted and unmounted: blkid -o list
 - Default mount options can be changed in /etc/mke2fs.conf under default_mntopts
 - To enable ACL on a FS, add the option 'acl' to the mount point in /etc/fstab
@@ -223,3 +232,6 @@ contain labels, onto an SELinux box."
 - Refresh NFS exports: exportfs -ra
 - Modify /etc/auto.master with: /mnt    /etc/auto.share
 - Create /etc/auto.share with: testdir1         192.168.25.10:/nfs/dir1
+- Create swap partition: mkswap /dev/sdd
+- Enable swap: swapon /dev/sdd
+- List swap: swapon -s
