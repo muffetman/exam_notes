@@ -30,6 +30,14 @@ same configuration for /var/www/html worked fine. Checking /var/log/httpd/error_
     @engineers      hard    nproc           10
     eric            -       nproc           unlimited
 - Identified which files chronyd was writing to and wrote to file with: lsof -p 17878 +fg | grep RW | tail -n 1 > ~/service_files.txt
+- View shell options: set -o
+- Turn on noclobber: set -o noclobber
+- Turn off noclobber: set +o noclobber
+
+REGEX, GREP, SED etc
+- Regex line start with: ^
+- Regex line ending with: $
+- Regex case insensitive: i or I
 - Grep for two different words in the same line in a file: grep -E 'session opened.*eric' secure
 - Grep for two different words in any order, in the same line in a file: grep -E 'trap.*dont|dont.*trap' grep_test
 - Grep for line starting with a certain word: grep -iE '^dont' grep_test
